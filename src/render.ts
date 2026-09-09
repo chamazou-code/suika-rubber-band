@@ -2,7 +2,7 @@ import {
   ACESFilmicToneMapping, BoxGeometry, Color, DirectionalLight, Fog, Group, HemisphereLight,
   InstancedMesh, LatheGeometry, Material, Mesh, MeshBasicMaterial, MeshStandardMaterial,
   Object3D, PCFShadowMap, PerspectiveCamera, PlaneGeometry, PMREMGenerator, Scene,
-  Texture, TorusGeometry, Vector2, Vector3, WebGLRenderer, type WebGLRenderTarget,
+  Texture, TorusGeometry, Vector2, Vector3, Vector4, WebGLRenderer, type WebGLRenderTarget,
 } from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { clamp, FLIGHT_DURATION, Game, HIT_STOP } from './game';
@@ -87,8 +87,19 @@ export class Renderer {
     // Precompile the fruit interior and all four particle materials before the first tap.
     const hidden: Object3D[] = [];
     this.scene.traverse(object => { if (!object.visible) { hidden.push(object); object.visible = true; } });
-    try { await this.webgl.compileAsync(this.scene, this.camera); }
-    finally { for (const object of hidden) object.visible = false; }
+    const viewport = this.webgl.getViewport(new Vector4());
+    try {
+      await this.webgl.compileAsync(this.scene, this.camera);
+      if (this.disposed) return;
+      // compileAsync covers surface shaders, but not the hidden fragments' shadow-depth variants.
+      // A one-pixel viewport beneath the loading UI warms shadow shaders and particle buffers.
+      // Keep the canvas target: a render target would compile different tone-mapping/color variants.
+      this.webgl.setViewport(0, 0, 1, 1);
+      this.webgl.shadowMap.needsUpdate = true; this.webgl.render(this.scene, this.camera);
+    } finally {
+      if (!this.disposed) this.webgl.setViewport(viewport);
+      for (const object of hidden) object.visible = false;
+    }
   }
 
   private buildRoom() {

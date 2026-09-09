@@ -30,6 +30,8 @@ export class Burst {
     ] as const;
     this.batches = configs.map(([kind, count, geometry, material]) => {
       const mesh = new InstancedMesh(geometry, material, count);
+      // Allocate per-instance color before prepare(): adding it at burst time creates a new shader variant.
+      if (kind === 'flesh') for (let i = 0; i < count; i++) mesh.setColorAt(i, new Color(0xffffff));
       mesh.name = kind === 'juice' ? 'JuiceParticles' : kind === 'seed' ? 'Seeds' : kind === 'flesh' ? 'FleshChunks' : 'RindFragments';
       mesh.frustumCulled = false; mesh.castShadow = kind !== 'juice'; mesh.receiveShadow = true;
       this.root.add(mesh); return { mesh, fragments: [], kind };
