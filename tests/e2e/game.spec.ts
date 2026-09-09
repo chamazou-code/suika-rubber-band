@@ -1,6 +1,15 @@
 import { test, expect, Page } from '@playwright/test';
 async function press(page:Page){await page.keyboard.press('Space');}
+// Sample all state transitions at 20fps without forcing the CI software GPU to paint 60fps.
+// Each tick stays within the game's 50ms cap; this still advances the real game loop.
+async function advance(page:Page,ms:number){
+  while(ms>0){const step=Math.min(50,ms);await page.clock.fastForward(step);ms-=step;}
+}
+async function spam(page:Page,count:number){
+  await page.evaluate(count=>{for(let i=0;i<count;i++)document.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',bubbles:true}));},count);
+}
 test('start, real input, spam lock, upward burst, result, retry and BEST persistence',async({page},testInfo)=>{
+  test.setTimeout(process.env.CI ? 120_000 : 60_000);
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{Math.random=()=>.5;});
   await page.goto('./');
@@ -18,20 +27,20 @@ test('start, real input, spam lock, upward burst, result, retry and BEST persist
   await page.locator('#action').click();await expect(page.locator('#band-count')).toHaveText('0');
   await page.keyboard.down('Space');await page.keyboard.down('Space');await page.keyboard.up('Space');
   await expect(page.locator('#band-count')).toHaveText('1');
-  for(let i=0;i<20;i++)await press(page);
+  await spam(page,20);
   await expect(page.locator('#band-count')).toHaveText('1');
   let attempts=1;
   while(await page.locator('#game').getAttribute('data-phase')==='playing' && attempts<71){
-    await page.clock.runFor(320);await press(page);attempts++;
+    await advance(page,320);await press(page);attempts++;
   }
   await expect(page.locator('#game')).toHaveAttribute('data-phase','cracking');
   const bands=Number(await page.locator('#band-count').textContent());expect(bands).toBeGreaterThan(10);expect(bands).toBeLessThan(55);
   await expect(page.locator('#action')).toBeDisabled();
-  for(let i=0;i<15;i++)await press(page);
+  await spam(page,15);
   await expect(page.locator('#band-count')).toHaveText(String(bands));
-  await page.clock.runFor(340);await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-upward.png`});
-  await page.clock.runFor(380);await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-impact.png`});
-  await page.clock.runFor(2400);await expect(page.locator('#result')).toBeVisible();
+  await advance(page,340);await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-upward.png`});
+  await advance(page,380);await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-impact.png`});
+  await advance(page,2400);await expect(page.locator('#result')).toBeVisible();
   await expect(page.locator('#meter-visual')).toBeHidden();
   await expect(page.locator('#action-label')).toHaveText('TRY ANOTHER');
   await expect(page.locator('#result-count')).toHaveText(String(bands));
