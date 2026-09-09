@@ -9,7 +9,9 @@ async function spam(page:Page,count:number){
   await page.evaluate(count=>{for(let i=0;i<count;i++)document.dispatchEvent(new KeyboardEvent('keydown',{code:'Space',bubbles:true}));},count);
 }
 test('start, real input, spam lock, upward burst, result, retry and BEST persistence',async({page},testInfo)=>{
-  test.setTimeout(process.env.CI ? 120_000 : 60_000);
+  // SwiftShader on a CPU runner can take minutes to paint the full burst frame sequence.
+  // Keep all assertions and actual WebGL frames; gameplay pacing is checked separately in real time.
+  test.setTimeout(process.env.CI ? 300_000 : 60_000);
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{Math.random=()=>.5;});
   await page.goto('./');
