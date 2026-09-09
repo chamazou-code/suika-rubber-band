@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#edf0df" />
+    <meta name="description" content="メーターを狙って、輪ゴムを1本。あと何本いける？ ワンタップで遊べる、スイカの限界チャレンジ。" />
+    <meta property="og:title" content="RUBBER BAND 🍉 — あと1本、いける？" />
+    <meta property="og:description" content="SAFEを狙ってタップ。スイカがはじける、その1本まで。無料のワンタップゲーム。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/social.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>RUBBER BAND 🍉 — あと1本、いける？</title>
+  </head>
+  <body>
+    <main id="game" class="game" data-phase="ready">
+      <header class="header">
+        <div class="brand"><img src="/favicon.svg" width="30" height="30" alt="" /><h1>RUBBER BAND<span>THE ONE-MORE GAME</span></h1></div>
+        <button id="sound" class="sound" type="button" aria-label="サウンドをオフにする" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M17 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/></svg></button>
+      </header>
+      <section class="stage" aria-label="スイカと、その後ろで見守る人物">
+        <div class="stage-copy" id="stage-copy">あと1本、いける？</div>
+        <canvas id="scene" aria-hidden="true"></canvas>
+        <div class="score" id="score"><span id="band-count">0</span><span class="score-label">BANDS</span></div>
+        <div id="feedback" class="feedback" aria-hidden="true"></div>
+        <div id="result" class="result" hidden>
+          <p class="result-eyebrow" id="result-title">NICE SQUEEZE!</p>
+          <div class="result-score"><span id="result-count">0</span><span>BANDS</span></div>
+          <div class="result-stats"><span>PERFECT <b id="perfect-rate">0%</b></span><span>BEST <b id="best-count">0</b></span></div>
+        </div>
+      </section>
+      <section class="controls" aria-label="タイミング操作">
+        <div class="meter-heading"><span id="meter-title">SAFEを狙って、輪ゴムを巻こう</span><span class="meter-dot" aria-hidden="true"></span></div>
+        <canvas id="meter" aria-label="針がSAFEの中央に来たらタップ。中央はPERFECT、端はGOOD、外はMISS。"></canvas>
+        <button id="action" class="action" type="button"><span id="action-label">TAP TO START</span><span id="action-icon" aria-hidden="true">↗</span></button>
+        <p class="hint" id="hint">タップ / クリック / <kbd>SPACE</kbd><span>音ありがおすすめ</span></p>
+      </section>
+      <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+      <noscript>このゲームを遊ぶには、ブラウザのJavaScriptを有効にしてください。</noscript>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
