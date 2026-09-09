@@ -4,6 +4,12 @@ import { tornEdge } from './fracture';
 
 export const pinchAt = (bands: number) => clamp((bands - 8) / 46) * .37;
 export const melonHeight = (bands: number) => 1.13 + pinchAt(bands) * .23;
+/** Critical damping releases the waist over 0.7s after the bands fly off. Visual shape only. */
+export function releasedLowerBands(bands: number, time: number) {
+  const t = clamp(time / .7);
+  const recovery = t >= 1 ? 1 : (1 - (1 + 7 * t) * Math.exp(-7 * t)) / (1 - 8 * Math.exp(-7));
+  return bands * (1 - recovery);
+}
 export function melonRadius(y: number, bands: number) {
   return 1.06 * Math.sqrt(Math.max(0, 1 - y * y)) * (1 - pinchAt(bands) * Math.exp(-Math.pow(y * 2.9, 2))) * (1 + y * .025);
 }
@@ -19,7 +25,7 @@ export class MelonSurface {
     this.original = Float32Array.from(this.geometry.attributes.position.array);
     this.deform(0);
   }
-  deform(bands: number, broken = false) {
+  deform(bands: number, broken = false, verticalOffset = 0) {
     const position = this.geometry.attributes.position;
     const normal = this.geometry.attributes.normal;
     const height = melonHeight(bands);
@@ -28,7 +34,7 @@ export class MelonSurface {
       const phi = Math.atan2(z, x), cross = Math.hypot(x, z);
       const radius = melonRadius(y, bands) * (1 + .007 * Math.sin(phi * 5 + y * 6) * (1 - y * y));
       const unevenSeam = (broken ? tornEdge(phi) : Math.sin(phi * 11 + .7) * .014) * Math.pow(1 - Math.abs(y), 8);
-      position.setXYZ(i, cross > .00001 ? x / cross * radius : 0, y * height + unevenSeam, cross > .00001 ? z / cross * radius : 0);
+      position.setXYZ(i, cross > .00001 ? x / cross * radius : 0, y * height + unevenSeam + verticalOffset, cross > .00001 ? z / cross * radius : 0);
       if (Math.abs(y) > .9999) normal.setXYZ(i, 0, Math.sign(y), 0);
       else {
         // Shared analytic normals keep separately drawn rind sections visually seamless.

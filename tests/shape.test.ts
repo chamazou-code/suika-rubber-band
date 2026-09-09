@@ -1,6 +1,24 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MelonSurface, melonHeight, melonRadius } from '../src/visual/shape';
+import { MelonSurface, melonHeight, melonRadius, releasedLowerBands } from '../src/visual/shape';
+
+test('released lower half opens and settles without lifting its base or retaining the constricted neck', () => {
+  const lower = new MelonSurface(false), originalBands = 55, rootHeight = melonHeight(originalBands);
+  let previous = originalBands;
+  for (let step = 0; step <= 70; step++) {
+    const shapeBands = releasedLowerBands(originalBands, step / 100);
+    assert.ok(shapeBands <= previous); previous = shapeBands;
+    const offset = melonHeight(shapeBands) - rootHeight;
+    lower.deform(shapeBands, true, offset);
+    assert.ok(Math.abs(lower.geometry.boundingBox!.min.y + rootHeight) < 1e-6);
+  }
+  assert.equal(releasedLowerBands(originalBands, 0), originalBands);
+  assert.equal(releasedLowerBands(originalBands, .7), 0);
+  assert.equal(releasedLowerBands(originalBands, 4), 0);
+  assert.ok(melonRadius(0, 0) > melonRadius(0, originalBands) * 1.5);
+  assert.ok(melonHeight(0) < rootHeight);
+  lower.geometry.dispose();
+});
 
 test('pressure constricts the waist locally while preserving the shoulders and table contact', () => {
   const lower = new MelonSurface(false);

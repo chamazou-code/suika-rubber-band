@@ -4,7 +4,7 @@ import {
   MeshStandardMaterial, Object3D, Quaternion, SphereGeometry, TorusGeometry, TubeGeometry, Vector3,
 } from 'three';
 import { clamp, type Game } from '../game';
-import { MelonSurface, melonHeight, melonRadius } from './shape';
+import { MelonSurface, melonHeight, melonRadius, releasedLowerBands } from './shape';
 import { makeFleshTexture, makeRindTextures, seededRandom } from './textures';
 import { makeTornSurface, tornFleshHeight } from './fracture';
 import { TableBody } from './physics';
@@ -27,6 +27,7 @@ export class Watermelon {
   private cracks: LineSegments;
   private dummy = new Object3D();
   private fractured = false;
+  private relaxedBands = -1;
   private sectionBodies: { body: TableBody; center: Vector3 }[] = [];
   private releasedBands: { body: TableBody; radius: number }[] = [];
   private transformedCenter = new Vector3();
@@ -113,6 +114,7 @@ export class Watermelon {
     this.lowerSurface.deform(count);
     this.root.position.y = melonHeight(count); this.stem.position.y = melonHeight(count);
     const waist = melonRadius(0, count);
+    this.lowerCut.position.y = 0;
     for (const cut of [this.lowerCut, ...this.upperCuts]) cut.scale.set(waist, 1, waist);
     for (const { mesh, phi } of this.fractureFaces) {
       const positions: number[] = [], uvs: number[] = [];
@@ -160,6 +162,7 @@ export class Watermelon {
 
   private release() {
     this.fractured = true;
+    this.relaxedBands = -1;
     this.lowerSurface.deform(this.count, true);
     for (const surface of this.upperSurfaces) surface.deform(this.count, true);
     const random = seededRandom(++this.round * 113 + 599), height = melonHeight(this.count);
@@ -205,6 +208,18 @@ export class Watermelon {
     this.flyingBands.instanceMatrix.needsUpdate = true;
   }
 
+  private relaxLower(time: number) {
+    const shapeBands = releasedLowerBands(this.count, time);
+    if (shapeBands === this.relaxedBands) return;
+    this.relaxedBands = shapeBands;
+    // Recover the local waist, not the whole object's scale. Lower the cut as it widens.
+    // The offset exactly cancels the height change at the bottom pole, keeping it on the table.
+    const offset = melonHeight(shapeBands) - melonHeight(this.count);
+    this.lowerSurface.deform(shapeBands, true, offset);
+    const opening = melonRadius(0, shapeBands);
+    this.lowerCut.scale.set(opening, 1, opening); this.lowerCut.position.y = offset;
+  }
+
   update(game: Game, time: number, visualTime: number, reduced: boolean) {
     if (game.bands !== this.count) this.setCount(game.bands);
     const broken = game.phase === 'bursting' || game.phase === 'result';
@@ -222,6 +237,7 @@ export class Watermelon {
     this.root.rotation.set(0, 0, 0); this.root.scale.setScalar(1);
     this.root.position.y = melonHeight(this.count);
     if (broken) {
+      this.relaxLower(visualTime);
       if (visualTime <= .48) {
         const t = visualTime;
         this.upper.position.set(t * .75, 5.2 * t - 4.905 * t * t, -t * .3);

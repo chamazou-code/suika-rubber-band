@@ -1,9 +1,14 @@
 import type { Grade } from './game';
+import { makeMusic } from './music';
 /** Original, synthesized sounds only. No audio downloads or recorded voices. */
 export class Sound {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
+  private music: AudioBufferSourceNode | null = null;
+  private musicGain: GainNode | null = null;
+  private musicLevel = .7;
+  private paused = false;
   enabled = true;
   async unlock() {
     if (!this.enabled) return;
@@ -17,21 +22,38 @@ export class Sound {
         const compressor = this.context.createDynamicsCompressor();
         compressor.threshold.value = -15;
         this.master.connect(compressor); compressor.connect(this.context.destination);
+        const samples = makeMusic(), buffer = this.context.createBuffer(1, samples.length, 22050);
+        buffer.copyToChannel(samples, 0);
+        this.musicGain = this.context.createGain(); this.musicGain.gain.value = 0;
+        this.musicGain.connect(this.master);
+        this.music = this.context.createBufferSource(); this.music.buffer = buffer; this.music.loop = true;
+        this.music.connect(this.musicGain); this.music.start();
         this.noiseBuffer = this.context.createBuffer(1, this.context.sampleRate, this.context.sampleRate);
         const data = this.noiseBuffer.getChannelData(0);
         for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
       }
-      if (this.context.state === 'suspended') await this.context.resume();
+      const context = this.context;
+      if (context.state !== 'running' && context.state !== 'closed') await context.resume();
+      if (this.context !== context) return;
+      if (this.paused) { void context.suspend().catch(() => {}); return; }
+      if (!this.enabled) return;
+      this.musicGain?.gain.setTargetAtTime(this.musicLevel, context.currentTime, .08);
     } catch { /* The visual game still works if a browser disables audio. */ }
   }
   toggle() {
     this.enabled = !this.enabled;
-    if (this.context && this.master) this.master.gain.setValueAtTime(this.enabled ? 0.5 : 0, this.context.currentTime);
+    if (this.context && this.master) this.master.gain.setTargetAtTime(this.enabled ? 0.5 : 0, this.context.currentTime, .012);
     if (this.enabled) void this.unlock();
   }
+  /** Duck the music for the creak and burst; no pitch or tempo hints at hidden durability. */
+  setPhase(phase: string) {
+    this.musicLevel = phase === 'cracking' || phase === 'bursting' ? .09 : phase === 'result' ? .46 : .7;
+    if (this.context && this.musicGain) this.musicGain.gain.setTargetAtTime(this.musicLevel, this.context.currentTime, .06);
+  }
+  startRound() { this.tone(660,660,.16,.11,'sine');this.tone(990,990,.22,.1,'sine',.08); }
   private tone(start: number, end: number, duration: number, volume: number, type: OscillatorType = 'sine', delay = 0) {
     const ctx = this.context;
-    if (!ctx || !this.master || !this.enabled || ctx.state !== 'running') return;
+    if (!ctx || !this.master || !this.enabled || this.paused || ctx.state !== 'running') return;
     const at = ctx.currentTime + delay;
     const osc = ctx.createOscillator(); const gain = ctx.createGain();
     osc.type = type; osc.frequency.setValueAtTime(start, at); osc.frequency.exponentialRampToValueAtTime(Math.max(20,end),at+duration);
@@ -41,7 +63,7 @@ export class Sound {
   }
   private noise(duration: number, volume: number, frequency: number, delay = 0) {
     const ctx = this.context;
-    if (!ctx || !this.master || !this.noiseBuffer || !this.enabled || ctx.state !== 'running') return;
+    if (!ctx || !this.master || !this.noiseBuffer || !this.enabled || this.paused || ctx.state !== 'running') return;
     const at = ctx.currentTime+delay; const src = ctx.createBufferSource(); const gain = ctx.createGain(); const filter = ctx.createBiquadFilter();
     src.buffer = this.noiseBuffer; filter.type = 'lowpass'; filter.frequency.setValueAtTime(frequency,at);
     filter.frequency.exponentialRampToValueAtTime(120,at+duration);
@@ -58,6 +80,11 @@ export class Sound {
   crack() { this.noise(.16,.23,1100);this.noise(.07,.22,1800,.12);this.tone(95,55,.22,.2,'sawtooth'); }
   burst() { this.noise(.4,.78,6800);this.tone(190,35,.45,.58);this.noise(.22,.3,2300,.07); }
   spray() { this.noise(.18,.24,2100);this.noise(.13,.14,1200,.07);this.tone(180,70,.13,.09,'triangle'); }
-  suspend() { if (this.context?.state === 'running') void this.context.suspend().catch(() => {}); }
-  dispose() { if (this.context) void this.context.close().catch(() => {}); this.context = null; this.master = null; this.noiseBuffer = null; }
+  suspend() { this.paused = true; if (this.context?.state === 'running') void this.context.suspend().catch(() => {}); }
+  resume() { this.paused = false; if (this.context && this.enabled) void this.unlock(); }
+  dispose() {
+    this.music?.stop(); this.music?.disconnect(); this.musicGain?.disconnect();
+    if (this.context) void this.context.close().catch(() => {});
+    this.context = null; this.master = null; this.noiseBuffer = null; this.music = null; this.musicGain = null;
+  }
 }

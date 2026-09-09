@@ -24,6 +24,7 @@ function animateUI(key: string, element: HTMLElement, frames: Keyframe[], durati
 function clearAnimations() { for (const animation of animations.values()) animation.cancel(); animations.clear(); }
 function announce(text: string) { announcement.textContent = text; }
 function updatePhase() {
+  sound.setPhase(game.phase);
   root.dataset.phase = game.phase;
   const playing = game.phase === 'playing', ended = game.phase === 'result';
   const locked = game.phase === 'cracking' || game.phase === 'bursting';
@@ -46,8 +47,8 @@ function start() {
 }
 function perform() {
   if (document.hidden || !prepared || !renderer?.available) return;
+  if (game.phase === 'ready' || game.phase === 'result') { start(); void sound.unlock().then(() => sound.startRound()); return; }
   void sound.unlock();
-  if (game.phase === 'ready' || game.phase === 'result') { start(); return; }
   const grade = game.tap(); if (!grade) return;
   sound.snap(grade); count.textContent = String(game.bands);
   $('feedback-text').textContent = grade === 'perfect' ? (game.combo > 1 ? `PERFECT ×${game.combo}` : 'PERFECT!') : grade === 'good' ? 'GOOD!' : 'MISS!';
@@ -71,7 +72,8 @@ $('reload').addEventListener('click', () => location.reload(), { signal: events.
 soundButton.addEventListener('click', () => {
   sound.toggle(); $('sound-hint').textContent = sound.enabled ? 'SOUND ON' : 'SOUND OFF';
   soundButton.setAttribute('aria-pressed', String(sound.enabled));
-  soundButton.setAttribute('aria-label', sound.enabled ? 'サウンドをオフにする' : 'サウンドをオンにする');
+  soundButton.setAttribute('aria-label', sound.enabled ? 'BGMと効果音をオフにする' : 'BGMと効果音をオンにする');
+  soundButton.title = sound.enabled ? 'BGM・効果音 ON' : 'BGM・効果音 OFF';
 }, { signal: events.signal });
 document.addEventListener('keydown', event => {
   if (event.code !== 'Space' || event.target === soundButton || event.target === $('reload')) return;
@@ -98,7 +100,7 @@ function loop(now: number) {
   frame = requestAnimationFrame(loop);
 }
 function pause() { if (frame) cancelAnimationFrame(frame); frame = 0; lastTime = 0; sound.suspend(); }
-function resume() { if (!frame && prepared && renderer?.available && !destroyed && !document.hidden) { lastTime = 0; frame = requestAnimationFrame(loop); } }
+function resume() { if (!frame && prepared && renderer?.available && !destroyed && !document.hidden) { sound.resume(); lastTime = 0; frame = requestAnimationFrame(loop); } }
 function availability(available: boolean) {
   root.dataset.render = available ? 'ready' : 'unavailable'; $('render-error').hidden = available;
   if (!available && prepared) {
