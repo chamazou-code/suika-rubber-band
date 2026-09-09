@@ -1,12 +1,13 @@
 @font-face{font-family:Outfit;src:url('/fonts/outfit-latin.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
 :root{font-family:Outfit,"Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;color:#faf7e8;background:#777565;font-synthesis:none;-webkit-font-smoothing:antialiased;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;overscroll-behavior:none}
+html,body{margin:0;overscroll-behavior:none;touch-action:manipulation}
 button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;color:inherit}
 button:focus-visible{outline:3px solid #f3e39d;outline-offset:5px}
 button:disabled{cursor:default}
 [hidden]{display:none!important}
-.game{height:100vh;height:100svh;min-height:460px;position:relative;overflow:hidden;isolation:isolate;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.game{height:100vh;height:100svh;min-height:460px;position:relative;overflow:hidden;isolation:isolate;touch-action:pinch-zoom;user-select:none;-webkit-user-select:none}
+.game button,.game canvas{touch-action:manipulation}
 .stage,.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .stage{z-index:-2}
 .game::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,#1d251e60 0%,#1d251e00 27%,#1d251e00 63%,#1c201d50 100%)}

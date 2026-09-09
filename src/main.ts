@@ -12,6 +12,7 @@ let storage: Storage | undefined;
 try { storage = window.localStorage; } catch { /* Storage is optional. */ }
 let best = readBest(storage), previousBest = best;
 let frame = 0, lastTime = 0, visibleFeedback = false, destroyed = false, prepared = false;
+let pendingStartSound = false;
 const animations = new Map<string, Animation>(), events = new AbortController();
 
 function animateUI(key: string, element: HTMLElement, frames: Keyframe[], duration: number) {
@@ -45,10 +46,25 @@ function start() {
   previousBest = best; game.start(); renderer?.reset(); count.textContent = '0'; updatePhase();
   announce('スタート。SAFEを狙ってタップすると輪ゴムが1本増えます。');
 }
-function perform() {
+async function activateSound() {
+  if (await sound.unlock() && pendingStartSound) {
+    pendingStartSound = false;
+    if (game.phase === 'playing') sound.startRound();
+  }
+}
+function updateSound() {
+  const status = sound.status, audible = status === 'on';
+  root.dataset.sound = status;
+  $('sound-hint').textContent = audible ? 'SOUND ON' : status === 'off' ? 'SOUND OFF' : 'TAP FOR SOUND';
+  soundButton.setAttribute('aria-pressed', String(audible));
+  soundButton.setAttribute('aria-label', audible ? 'BGMと効果音をオフにする' : 'BGMと効果音をオンにする');
+  soundButton.title = audible ? 'BGM・効果音 ON' : 'タップでBGM・効果音をON';
+}
+sound.onStatusChange = updateSound;
+function perform(activateAudio = true) {
   if (document.hidden || !prepared || !renderer?.available) return;
-  if (game.phase === 'ready' || game.phase === 'result') { start(); void sound.unlock().then(() => sound.startRound()); return; }
-  void sound.unlock();
+  if (game.phase === 'ready' || game.phase === 'result') { start(); pendingStartSound = true; if (activateAudio) void activateSound(); return; }
+  if (activateAudio) void activateSound();
   const grade = game.tap(); if (!grade) return;
   sound.snap(grade); count.textContent = String(game.bands);
   $('feedback-text').textContent = grade === 'perfect' ? (game.combo > 1 ? `PERFECT ×${game.combo}` : 'PERFECT!') : grade === 'good' ? 'GOOD!' : 'MISS!';
@@ -65,16 +81,36 @@ root.addEventListener('pointerdown', event => {
   const target = event.target as HTMLElement;
   if (target.closest('#sound, #reload')) return;
   if (game.phase === 'result' && !target.closest('#action')) return;
-  perform();
+  // Touch pointerdown does not grant audio activation on iOS. Keep timing input immediate,
+  // but unlock sound from touchend; mouse and keyboard remain immediate for both.
+  perform(event.pointerType === 'mouse');
 }, { signal: events.signal });
 action.addEventListener('click', event => { if (event.detail === 0) perform(); }, { signal: events.signal });
 $('reload').addEventListener('click', () => location.reload(), { signal: events.signal });
-soundButton.addEventListener('click', () => {
-  sound.toggle(); $('sound-hint').textContent = sound.enabled ? 'SOUND ON' : 'SOUND OFF';
-  soundButton.setAttribute('aria-pressed', String(sound.enabled));
-  soundButton.setAttribute('aria-label', sound.enabled ? 'BGMと効果音をオフにする' : 'BGMと効果音をオンにする');
-  soundButton.title = sound.enabled ? 'BGM・効果音 ON' : 'BGM・効果音 OFF';
+soundButton.addEventListener('click', () => sound.toggle(), { signal: events.signal });
+// Cancel single-finger tap defaults on Safari, without swallowing two-finger pinch zoom.
+// Since that also suppresses compatibility clicks, route the two utility buttons here.
+let touch: { x: number; y: number; multi: boolean } | null = null;
+root.addEventListener('touchstart', event => {
+  if (!touch && event.touches.length === 1) touch = { x: event.touches[0].clientX, y: event.touches[0].clientY, multi: false };
+  if (touch && event.touches.length > 1) touch.multi = true;
+}, { passive: true, signal: events.signal });
+root.addEventListener('touchend', event => {
+  const point = event.changedTouches[0];
+  const tapped = touch && !touch.multi && event.touches.length === 0 && point && Math.hypot(point.clientX - touch.x, point.clientY - touch.y) < 14;
+  if (event.touches.length === 0) touch = null;
+  if (!tapped) return;
+  if (event.cancelable) event.preventDefault();
+  const target = event.target as HTMLElement;
+  if (target.closest('#sound')) sound.toggle();
+  else if (target.closest('#reload')) location.reload();
+  else if (prepared && renderer?.available) void activateSound();
+}, { passive: false, signal: events.signal });
+root.addEventListener('touchcancel', () => { touch = null; }, { passive: true, signal: events.signal });
+root.addEventListener('pointerup', event => {
+  if (event.pointerType === 'pen' && !(event.target as Element).closest('#sound, #reload') && prepared && renderer?.available) void activateSound();
 }, { signal: events.signal });
+root.addEventListener('dblclick', event => event.preventDefault(), { signal: events.signal });
 document.addEventListener('keydown', event => {
   if (event.code !== 'Space' || event.target === soundButton || event.target === $('reload')) return;
   event.preventDefault(); if (!event.repeat) perform();
@@ -127,4 +163,4 @@ window.addEventListener('pagehide', event => { pause(); if (!event.persisted) di
 window.addEventListener('pageshow', () => { renderer?.resize(); resume(); }, { signal: events.signal });
 function dispose() { destroyed = true; pause(); clearAnimations(); events.abort(); renderer?.dispose(); sound.dispose(); }
 if (import.meta.hot) import.meta.hot.dispose(dispose);
-updatePhase(); void initialize();
+updatePhase(); updateSound(); void initialize();

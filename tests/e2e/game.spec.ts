@@ -94,13 +94,42 @@ test('320px and landscape fit; touch adds exactly one; mute is not a game input;
     await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-${size.width}.png`});
   }
   await page.setViewportSize({width:320,height:568});
-  await page.locator('#sound').click();await expect(page.locator('#game')).toHaveAttribute('data-phase','ready');
+  const soundTap=()=>testInfo.project.use.hasTouch?page.locator('#sound').tap():page.locator('#sound').click();
+  await soundTap();await expect(page.locator('#game')).toHaveAttribute('data-phase','ready');
+  await expect(page.locator('#sound')).toHaveAttribute('aria-pressed','true');
+  await soundTap();
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed','false');
   if(testInfo.project.use.hasTouch){
     await page.locator('#action').tap();await page.touchscreen.tap(150,200);
   }else {await page.locator('#action').click();await page.mouse.click(150,200);}
   await expect(page.locator('#band-count')).toHaveText('1');
-  await page.locator('#sound').click();await expect(page.locator('#band-count')).toHaveText('1');
+  await soundTap();await expect(page.locator('#band-count')).toHaveText('1');
+  if(testInfo.project.use.hasTouch){
+    await page.evaluate(()=>{
+      (window as unknown as {tapDefaults:boolean[]}).tapDefaults=[];
+      document.addEventListener('touchend',event=>(window as unknown as {tapDefaults:boolean[]}).tapDefaults.push(event.defaultPrevented));
+    });
+    const scale=await page.evaluate(()=>visualViewport!.scale);
+    for(const id of ['#scene','#action','#sound']){
+      await page.locator(id).tap();await page.locator(id).tap();
+      expect(await page.evaluate(()=>visualViewport!.scale)).toBe(scale);
+    }
+    expect(await page.evaluate(()=>(window as unknown as {tapDefaults:boolean[]}).tapDefaults)).toEqual([true,true,true,true,true,true]);
+    // The fallback must leave a two-finger gesture alone, including its final finger release.
+    expect(await page.evaluate(()=>{
+      const root=document.querySelector('#game')!;
+      const a={identifier:11,clientX:100,clientY:200},b={identifier:12,clientX:180,clientY:200};
+      // WebKit prohibits constructing Touch objects. These scripted events check only the
+      // guard's two-finger cancellation policy; the single-finger taps above are native input.
+      const send=(type:string,touches:typeof a[],changed:typeof a[])=>{
+        const event=new Event(type,{bubbles:true,cancelable:true});
+        Object.defineProperties(event,{touches:{value:touches},changedTouches:{value:changed}});root.dispatchEvent(event);return event;
+      };
+      send('touchstart',[a],[a]);send('touchstart',[a,b],[b]);
+      const first=send('touchend',[b],[a]),last=send('touchend',[],[b]);
+      return first.defaultPrevented||last.defaultPrevented;
+    })).toBe(false);
+  }
   expect(errors).toEqual([]);
 });
 test('blocked storage and held Space leave the game playable',async({page})=>{

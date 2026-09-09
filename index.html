@@ -9,7 +9,9 @@
     <meta property="og:description" content="タイミングを合わせて輪ゴムを巻こう。スイカがはじけるまで、あと何本いける？ スマホ・PCですぐ遊べる無料3Dゲーム。" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta property="og:image" content="https://chamazou-code.github.io/rubber-band/social.png" />
+    <meta property="og:image" content="https://chamazou-code.github.io/suika-rubber-band/social.png" />
+    <meta property="og:url" content="https://chamazou-code.github.io/suika-rubber-band/" />
+    <link rel="canonical" href="https://chamazou-code.github.io/suika-rubber-band/" />
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:site_name" content="スイカ輪ゴムチャレンジ" />
@@ -24,7 +26,7 @@
       </section>
       <header class="header">
         <h1>RUBBER <span>BAND</span><img src="/favicon.svg" width="32" height="32" alt="🍉" /></h1>
-        <button id="sound" class="sound" type="button" aria-label="BGMと効果音をオフにする" title="BGM・効果音 ON" aria-pressed="true">
+        <button id="sound" class="sound" type="button" aria-label="BGMと効果音をオンにする" title="タップでBGM・効果音をON" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M17 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/><path class="sound-slash" d="m17 9 5 6m0-6-5 6"/></svg>
         </button>
       </header>
@@ -56,7 +58,7 @@
         <div class="action-group">
           <p id="retry-message" class="retry-message" aria-hidden="true">次のスイカ、いってみよう。</p>
           <button id="action" class="action" type="button" disabled><span id="action-label">TAP TO START</span><span id="action-icon" aria-hidden="true">↗</span></button>
-          <p class="hint"><span>TAP / CLICK / <kbd>SPACE</kbd></span><span id="sound-hint">SOUND ON</span></p>
+          <p class="hint"><span>TAP / CLICK / <kbd>SPACE</kbd></span><span id="sound-hint">TAP FOR SOUND</span></p>
         </div>
       </section>
       <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>

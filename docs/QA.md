@@ -1,12 +1,20 @@
-# v1.2 Three.js 検証記録
+# v1.2.1 Three.js 検証記録
 
 2026-09-09。今回の3D版を対象とする。以前の2D版のSafari本体・iOS Simulator確認を、今回の実機確認として扱わない。
+
+## iPhone Safariの報告への修正
+
+- v1.2.0の音テストはモバイル設定でもマウスclickを使っていた。タッチ入力へ変更し、再生許可を与えるイベントより先にAudioContextを作っていたことをiPhone WebKit・Android Chromeで検出（修正前は両方失敗）。
+- 指を触れた瞬間のゲーム判定を維持し、音の作成・resumeをtouchendへ移動。SafariのAudio Session APIがある場合はplaybackを指定し、OFF・背景移動・破棄で戻す。端末の音量ゼロを解除する処理は行わない。
+- 再生拒否を注入して、SOUND ONを誤表示しないことと、音ボタンの再試行でゲーム本数を増やさず復帰することを検証。
+- スイカ・追加ボタン・音ボタンへの実タップを各2回続け、6回とも既定動作がキャンセルされ、visualViewport.scaleが変わらないことを確認。2本指のイベント列は別の合成イベントで抑止しないことを確認。これはiPhone実機でのネイティブ拡大ジェスチャー確認とは区別する。
+- 音の計測はBGMが1個だけであること、効果音、OFF中の無音、ONでの復帰、背景移動・復帰を含む。Audio Session APIのないテストブラウザでは同APIをスタブ化し、設定と解除の分岐も確認する。消音スイッチとスピーカーへの実出力は、iPhone実機では未確認。
 
 ## ルール・物理・ブラウザ
 
 - 単体テスト17件成功。従来の8件に加え、局所変形・表面の継ぎ目・有限な頂点値、破断面の凹凸、固定刻み物理の30/60fps一致、ヒットストップ、材質による反発差、下半分の解放変形と接地点の維持、BGMの有限値・音量・ループ境界・ゲーム乱数との独立を確認。
 - `src/game.ts` はv1.1から変更なし。40〜70の個体耐久、隠しダメージ、SAFE判定と移動・縮小、速度、入力間隔、BESTを維持。
-- Chrome本体／Desktop WebKit／iPhone WebKit設定／Android Chrome設定でE2E合計18件成功。
+- Chrome本体／Desktop WebKit／iPhone WebKit設定／Android Chrome設定でE2E合計22件成功。
 - WebKitのコンテキスト喪失シミュレーション2件は明示的にskip。通常のWebGL2描画・開始・破裂・再挑戦は両WebKit設定でも確認。Chromiumの2設定ではコンテキスト喪失中の入力停止と同じ本数での復帰も成功。
 - 320×568、390×844、844×390、1440×900を確認。横幅超過なし。タップ・クリック・Space、長押し、連打、破裂中ロック、ミュート誤入力、BEST保存・保存禁止、reduced-motionを検証。
 - 3DのWebGL2コンテキストが有効でGLエラーがないこと、ページ例外がないことを確認。
@@ -24,7 +32,7 @@
 
 - 木琴風の自作BGMを追加。最初の操作で開始し、音ボタンでBGM・効果音を一括ON／OFF。破裂中はBGMを下げる。
 - 4ブラウザ設定で実際のWeb Audio出力をAnalyserNodeで計測。初回操作前の無音、BGM単体の出力、効果音ソース、ミュート中の無音と追加音の抑止、ON後の復帰、BGMループが1個だけであることを検証。可視性イベントによる停止・再開も確認。物理端末のスピーカー・サイレントスイッチは未確認。
-- ページタイトルとOGタイトルを「スイカ輪ゴムチャレンジ 🍉」へ変更。URLは維持する。既に共有されたカードの更新時期は共有先のキャッシュに依存。
+- ページタイトルとOGタイトルは「スイカ輪ゴムチャレンジ 🍉」。公開パスを `/suika-rubber-band/` へ移し、旧URLには新URLへの案内を置く。既に共有されたカードの更新時期は共有先のキャッシュに依存。
 
 ## 実時間の操作確認
 
@@ -66,8 +74,8 @@
 
 ## 公開先
 
-- GitHub： https://github.com/chamazou-code/rubber-band
-- GitHub Pages： https://chamazou-code.github.io/rubber-band/
+- GitHub： https://github.com/chamazou-code/suika-rubber-band
+- GitHub Pages： https://chamazou-code.github.io/suika-rubber-band/
 - `main`へのpushで単体・ブラウザテストとビルド後に自動公開。
 - Cloudflare Pagesは未接続。アカウントのログインが残っており、READMEにGit連携の設定を記載。
 - v1.2の公開結果はGitHub Actionsの対象コミットの成功結果と公開先アセットを確認して別途報告する。

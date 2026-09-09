@@ -1,12 +1,14 @@
 # スイカ輪ゴムチャレンジ 🍉 — RUBBER BAND
 
-メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.2.0。
+メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.2.1。
 
-**公開URL：[スイカ輪ゴムチャレンジ 🍉](https://chamazou-code.github.io/rubber-band/)**
+**公開URL：[スイカ輪ゴムチャレンジ 🍉](https://chamazou-code.github.io/suika-rubber-band/)**
 
-[GitHubリポジトリ](https://github.com/chamazou-code/rubber-band)
+[GitHubリポジトリ](https://github.com/chamazou-code/suika-rubber-band)
 
 現在はGitHub Pagesに公開。Cloudflareはアカウントのログイン待ちで、下記設定でGit連携できます。GitHub Pagesでも `main` へのpushでテスト・ビルド・公開が自動実行されます。
+
+v1.2.1で公開先と開発リポジトリを `suika-rubber-band` へ移動。以前の `/rubber-band/` は旧リポジトリの `redirect` ブランチから案内ページを配信します。テンプレートは `scripts/legacy-site/`。旧 `main` の履歴・タグを残し、BESTの保存キーとホスト名も維持します。
 
 ## 遊び方
 
@@ -41,7 +43,7 @@ npx playwright install chromium webkit
 npm run test:e2e
 
 # 公開URLに同じE2Eを実行
-GAME_URL=https://chamazou-code.github.io/rubber-band/ npm run test:e2e
+GAME_URL=https://chamazou-code.github.io/suika-rubber-band/ npm run test:e2e
 ```
 
 Chromeのプロジェクトはインストール済みGoogle Chromeを使用します。CIではChromiumへ切り替えます。
@@ -53,7 +55,7 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 
 | 設定 | 値 |
 | --- | --- |
-| Repository | `chamazou-code/rubber-band` |
+| Repository | `chamazou-code/suika-rubber-band` |
 | Production branch | `main` |
 | Framework preset | Vite / None |
 | Root directory | 空欄（リポジトリ直下） |
@@ -62,7 +64,7 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 | Environment variable | `NODE_VERSION=22.22.0` |
 
 1. Cloudflare Dashboard → Workers & Pages → Create application → Pages → Connect to Git。
-2. GitHubの `chamazou-code/rubber-band` のみを対象に接続。
+2. GitHubの `chamazou-code/suika-rubber-band` のみを対象に接続。
 3. 上記のビルド設定を入力し、Save and Deploy。
 4. 発行された `https://<project>.pages.dev` で開始・破裂・再挑戦を確認。
 5. 以後、`git push origin main` で自動ビルド・公開。PRはプレビューになります。
@@ -87,7 +89,9 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 
 音はユーザーの初回操作で解禁。右上の音ボタンでBGM・効果音をまとめてON／OFF。背景へ移ると停止し、戻ると再開します。BGMは108 BPMの8小節を初回に合成してループ再生し、毎フレームの音声生成や音楽用タイマーは使いません。きしみ・破裂中はBGMを小さくして効果音を前に出します。
 
-reduced-motionではシェイク、震え、ポップを止め、粒子数を減らします。タイミング針と上方向の飛翔はゲームの理解に必要な動きとして残します。画面ズームは禁止せず、ゲーム領域のtouch-actionで誤操作を抑えます。
+iPhoneでは、タイミング判定は指を触れた瞬間、音の解禁は指を離した `touchend` 内で行います。Audio Session APIがあるSafariでは `playback` を指定し、端末のメディア音量で再生。ミュートや背景移動時に設定を戻します。再生許可が得られなければ「SOUND ON」と表示せず、音ボタンから再試行できます。根拠：[ユーザー操作による制限](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/User_activation)、[WebKitの消音モードとAudio Session](https://bugs.webkit.org/show_bug.cgi?id=237322)。実機スピーカー・旧iOSの挙動は未確認です。
+
+reduced-motionではシェイク、震え、ポップを止め、粒子数を減らします。タイミング針と上方向の飛翔はゲームの理解に必要な動きとして残します。ダブルタップ拡大はtouch-actionと単指touchendの既定動作抑止で防ぎ、2本指のピンチ拡大は残します。
 
 検証の範囲と既知の制約は [docs/QA.md](docs/QA.md)、設計と添付動画の観察は [docs/DESIGN.md](docs/DESIGN.md) を参照。
 
