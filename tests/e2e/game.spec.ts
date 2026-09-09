@@ -31,7 +31,9 @@ test('start, real input, spam lock, upward burst, result, retry and BEST persist
   await expect(page.locator('#result-count')).toHaveText(String(bands));
   await expect(page.locator('#best-count')).toHaveText(String(bands));
   await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-result.png`});
-  await page.locator('#action').click();await page.clock.runFor(4000);
+  await page.locator('#action').click();
+  // Exercise any leftover timers without rendering 240 idle frames of the new round.
+  await page.clock.fastForward(4000);
   await expect(page.locator('#band-count')).toHaveText('0');await expect(page.locator('#result')).toBeHidden();await expect(page.locator('#game')).toHaveAttribute('data-phase','playing');
   await expect(page.locator('#meter-visual')).toBeVisible();
   await expect(page.locator('#retry-message')).toBeHidden();
