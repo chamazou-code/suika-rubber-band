@@ -55,17 +55,24 @@ export class TableBody {
     }
     if (this.position.y + lowest < .016) {
       this.position.y = .016 - lowest;
+      // Average the contact patch: flat pieces rest on a face instead of jittering on one vertex.
+      this.contact.set(0, 0, 0); let touching = 0;
+      for (const point of this.support) {
+        this.point.copy(point).applyQuaternion(this.rotation);
+        if (this.point.y <= lowest + .018) { this.contact.add(this.point); touching++; }
+      }
+      this.contact.divideScalar(touching || 1);
       const downward = Math.min(0, this.velocity.y);
       if (downward < -.25) this.contacts++;
       // Impact torque from an off-center contact makes heavy pieces tip and settle.
       const bounce = Math.abs(downward) > .45 ? this.options.restitution : 0;
       this.velocity.y = -downward * bounce;
       this.impulse.set(0, -downward * (1 + bounce), 0);
-      this.point.crossVectors(this.contact, this.impulse).multiplyScalar(.23 / this.radiusSquared);
-      this.angularVelocity.add(this.point).multiplyScalar(.82);
+      this.point.crossVectors(this.contact, this.impulse).multiplyScalar(1.6 / this.radiusSquared);
+      this.angularVelocity.add(this.point).multiplyScalar(.94);
       const friction = Math.exp(-this.options.friction * dt);
       this.velocity.x *= friction; this.velocity.z *= friction;
-      this.angularVelocity.multiplyScalar(friction);
+      this.angularVelocity.multiplyScalar(Math.pow(friction, .15));
     }
   }
 }
