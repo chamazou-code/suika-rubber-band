@@ -1,14 +1,14 @@
 # スイカ輪ゴムチャレンジ 🍉 — RUBBER BAND
 
-メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.2.1。
+メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.2.2。
 
-**公開URL：[スイカ輪ゴムチャレンジ 🍉](https://chamazou-code.github.io/suika-rubber-band/)**
+**公開URL：[スイカ輪ゴムチャレンジ 🍉](https://suika-rubber-band.pages.dev/)**
 
 [GitHubリポジトリ](https://github.com/chamazou-code/suika-rubber-band)
 
-現在はGitHub Pagesに公開。Cloudflareはアカウントのログイン待ちで、下記設定でGit連携できます。GitHub Pagesでも `main` へのpushでテスト・ビルド・公開が自動実行されます。
+Cloudflare PagesのGit連携で公開。`main` へのpushでビルド・公開が自動実行されます。GitHub Actionsでは単体・ブラウザテストを実行します。
 
-v1.2.1で公開先と開発リポジトリを `suika-rubber-band` へ移動。以前の `/rubber-band/` は旧リポジトリの `redirect` ブランチから案内ページを配信します。テンプレートは `scripts/legacy-site/`。旧 `main` の履歴・タグを残し、BESTの保存キーとホスト名も維持します。
+v1.2.1で公開先と開発リポジトリを `suika-rubber-band` へ移動。以前の `/rubber-band/` は旧リポジトリの `redirect` ブランチから案内ページを配信します。テンプレートは `scripts/legacy-site/`。旧 `main` の履歴・タグを残します。Cloudflareへのドメイン移転では、旧URLの転送ページがBESTだけをURLフラグメントで渡し、新サイトが引き継ぎます。既存の高いBESTは上書きせず、取り込み後はフラグメントを取り除きます。ストレージが使えなくてもゲームは開けます。
 
 ## 遊び方
 
@@ -43,7 +43,7 @@ npx playwright install chromium webkit
 npm run test:e2e
 
 # 公開URLに同じE2Eを実行
-GAME_URL=https://chamazou-code.github.io/suika-rubber-band/ npm run test:e2e
+GAME_URL=https://suika-rubber-band.pages.dev/ npm run test:e2e
 ```
 
 Chromeのプロジェクトはインストール済みGoogle Chromeを使用します。CIではChromiumへ切り替えます。
@@ -55,6 +55,7 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 
 | 設定 | 値 |
 | --- | --- |
+| Project name | `suika-rubber-band` |
 | Repository | `chamazou-code/suika-rubber-band` |
 | Production branch | `main` |
 | Framework preset | Vite / None |
@@ -66,7 +67,7 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 1. Cloudflare Dashboard → Workers & Pages → Create application → Pages → Connect to Git。
 2. GitHubの `chamazou-code/suika-rubber-band` のみを対象に接続。
 3. 上記のビルド設定を入力し、Save and Deploy。
-4. 発行された `https://<project>.pages.dev` で開始・破裂・再挑戦を確認。
+4. `https://suika-rubber-band.pages.dev/` で開始・破裂・再挑戦を確認。
 5. 以後、`git push origin main` で自動ビルド・公開。PRはプレビューになります。
 
 **Git連携を使うので、先にDirect Upload専用プロジェクトを作成しないでください。** Git連携とDirect Uploadの切替には制約があります。

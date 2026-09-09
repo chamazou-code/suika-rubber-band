@@ -1,5 +1,6 @@
 import './style.css';
-import { Game, readBest, saveBest } from './game';
+import { Game, saveBest } from './game';
+import { restoreBestFromLink } from './score-migration';
 import { Renderer } from './render';
 import { Sound } from './audio';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -10,7 +11,11 @@ const motion = matchMedia('(prefers-reduced-motion: reduce)');
 let renderer: Renderer | null = null;
 let storage: Storage | undefined;
 try { storage = window.localStorage; } catch { /* Storage is optional. */ }
-let best = readBest(storage), previousBest = best;
+let best = restoreBestFromLink(window.location.hash, storage), previousBest = best;
+if (/^#best=/.test(window.location.hash)) {
+  // Keep the shared URL clean after importing; preserve unrelated query parameters.
+  try { history.replaceState(history.state, '', location.pathname + location.search); } catch { /* Optional URL cleanup. */ }
+}
 let frame = 0, lastTime = 0, visibleFeedback = false, destroyed = false, prepared = false;
 let pendingStartSound = false;
 const animations = new Map<string, Animation>(), events = new AbortController();

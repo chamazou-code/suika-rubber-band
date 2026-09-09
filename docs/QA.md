@@ -75,7 +75,14 @@
 ## 公開先
 
 - GitHub： https://github.com/chamazou-code/suika-rubber-band
-- GitHub Pages： https://chamazou-code.github.io/suika-rubber-band/
-- `main`へのpushで単体・ブラウザテストとビルド後に自動公開。
-- Cloudflare Pagesは未接続。アカウントのログインが残っており、READMEにGit連携の設定を記載。
+- Cloudflare Pages： https://suika-rubber-band.pages.dev/
+- 旧GitHub Pages： https://chamazou-code.github.io/suika-rubber-band/
+- CloudflareのGit連携で`main`へのpushを自動ビルド・公開。GitHub Actionsで単体・ブラウザテストを実行。
+- Cloudflare PagesのGit連携を接続し、2026-09-09に初回デプロイ成功。`npm run build` / `dist` / `NODE_VERSION=22.22.0`。公開後の移行検証は下記に追記。
 - v1.2の公開結果はGitHub Actionsの対象コミットの成功結果と公開先アセットを確認して別途報告する。
+
+## v1.2.2 ドメイン移行
+
+- BESTを旧ドメインからURLフラグメントで引き継ぐ。0〜70の整数のみ受け入れ、保存済みBESTが高ければ維持。取り込み後はフラグメントを消す。
+- ローカル単体テスト22件成功。移行のブラウザテスト4件成功（Desktop Chrome / Desktop WebKit / iPhone WebKit / Android Chrome）。
+- 本番向けビルド成功。ゲームルールと音声・タッチの処理はv1.2.1から変更なし。
