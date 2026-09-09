@@ -8,7 +8,7 @@
 
 Cloudflare PagesのGit連携で公開。`main` へのpushでビルド・公開が自動実行されます。GitHub Actionsでは単体・ブラウザテストを実行します。
 
-v1.2.1で公開先と開発リポジトリを `suika-rubber-band` へ移動。以前の `/rubber-band/` は旧リポジトリの `redirect` ブランチから案内ページを配信します。テンプレートは `scripts/legacy-site/`。旧 `main` の履歴・タグを残します。Cloudflareへのドメイン移転では、旧URLの転送ページがBESTだけをURLフラグメントで渡し、新サイトが引き継ぎます。既存の高いBESTは上書きせず、取り込み後はフラグメントを取り除きます。ストレージが使えなくてもゲームは開けます。
+v1.2.1で公開先と開発リポジトリを `suika-rubber-band` へ移動。GitHub Pagesの `/suika-rubber-band/` はActionsから、以前の `/rubber-band/` は旧リポジトリの `redirect` ブランチから、Cloudflareへの転送ページを配信します。テンプレートは `scripts/legacy-site/`。旧 `main` の履歴・タグを残します。Cloudflareへのドメイン移転では、旧URLの転送ページがBESTだけをURLフラグメントで渡し、新サイトが引き継ぎます。既存の高いBESTは上書きせず、取り込み後はフラグメントを取り除きます。ストレージが使えなくてもゲームは開けます。
 
 ## 遊び方
 

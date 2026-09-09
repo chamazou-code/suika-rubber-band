@@ -1,4 +1,4 @@
-name: Publish static game
+name: Publish legacy URL redirect
 on:
   push:
     branches: [main]
@@ -24,12 +24,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium webkit
-      - run: npm run test:e2e
+      # Cloudflare builds the game from main. GitHub Pages only keeps old shared links working.
+      # The independent Verify game workflow runs the full browser suite.
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: scripts/legacy-site
       - id: deployment
         uses: actions/deploy-pages@v4
