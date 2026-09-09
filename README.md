@@ -1,6 +1,6 @@
 # RUBBER BAND 🍉
 
-メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.0.0。
+メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.1.0。
 
 **公開URL：[ブラウザで遊ぶ](https://chamazou-code.github.io/rubber-band/)**
 
@@ -73,7 +73,7 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 
 本作はHTML/CSS/JavaScriptの静的配信だけで完結します。Functions、Workers、サーバー、DB、APIキー、ログイン、分析SDK、課金処理は使いません。独自ドメインも不要です。無料Pages枠の範囲で月額固定費0円を目指す構成です。プランの上限はCloudflareの最新条件に従います。
 
-`public/_headers` でCSPとキャッシュ設定を配信します。ランタイムの外部通信、外部フォント、外部画像、外部音声はありません。
+`public/_headers` でCSPとキャッシュ設定を配信します。フォントも同梱して配信し、プレイ中に外部サービスへ通信しません。
 
 ## 実装
 
@@ -89,4 +89,6 @@ GitHubリポジトリをCloudflare Pagesの **Git integration** で接続しま�
 
 ## 素材
 
-イラストは独自のCanvas図形、SNSカードは独自のSVG、音は独自の合成音。外部素材・有料素材は使用していません。添付参照動画は観察にのみ使用し、ゲームにもリポジトリにも同梱していません。
+イラストは独自のCanvas図形、SNSカードは独自のSVG、音は独自の合成音。有料素材は使用していません。添付参照動画は観察にのみ使用し、ゲームにもリポジトリにも同梱していません。
+
+英数字は [Outfit](https://github.com/google/fonts/tree/main/ofl/outfit)（Copyright 2021 The Outfit Project Authors、SIL Open Font License 1.1）。Latin文字を中心にサブセット化した約20KBのWOFF2を同梱し、外部フォントCDNには接続しません。[ライセンス全文](public/fonts/OFL-Outfit.txt)。日本語は端末のシステムフォントです。
