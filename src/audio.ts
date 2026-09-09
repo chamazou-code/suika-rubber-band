@@ -57,7 +57,7 @@ export class Sound {
   }
   crack() { this.noise(.16,.23,1100);this.noise(.07,.22,1800,.12);this.tone(95,55,.22,.2,'sawtooth'); }
   burst() { this.noise(.4,.78,6800);this.tone(190,35,.45,.58);this.noise(.22,.3,2300,.07); }
-  hit() { this.noise(.23,.52,1800);this.tone(260,65,.2,.27,'triangle');this.tone(115,160,.22,.16,'sine',.12);this.tone(170,80,.35,.17,'triangle',.32); }
+  spray() { this.noise(.18,.24,2100);this.noise(.13,.14,1200,.07);this.tone(180,70,.13,.09,'triangle'); }
   suspend() { if (this.context?.state === 'running') void this.context.suspend().catch(() => {}); }
   dispose() { if (this.context) void this.context.close().catch(() => {}); this.context = null; this.master = null; this.noiseBuffer = null; }
 }

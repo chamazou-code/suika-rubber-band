@@ -3,12 +3,18 @@ async function press(page:Page){await page.keyboard.press('Space');}
 test('start, real input, spam lock, upward burst, result, retry and BEST persistence',async({page},testInfo)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{Math.random=()=>.5;});
+  await page.goto('./');
+  await expect(page.locator('#game')).toHaveAttribute('data-render','ready',{timeout:20000});
+  expect(await page.locator('#scene').evaluate(canvas => {
+    const gl = (canvas as HTMLCanvasElement).getContext('webgl2');
+    return !!gl && !gl.isContextLost() && gl.getError() === gl.NO_ERROR;
+  })).toBe(true);
   await page.clock.install({time:new Date('2026-09-09T00:00:00Z')});
   await page.clock.pauseAt(new Date('2026-09-09T00:00:01Z'));
-  await page.goto('./');await page.clock.runFor(100);
+  await page.clock.runFor(100);
   await expect(page.locator('#game')).toHaveAttribute('data-phase','ready');
   await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-ready.png`});
-  const initial=await page.locator('#action').boundingBox();expect(initial!.width).toBeGreaterThan(240);
+  const initial=await page.locator('#action').boundingBox();expect(initial!.width).toBeGreaterThan(160);expect(initial!.height).toBeGreaterThanOrEqual(42);
   await page.locator('#action').click();await expect(page.locator('#band-count')).toHaveText('0');
   await page.keyboard.down('Space');await page.keyboard.down('Space');await page.keyboard.up('Space');
   await expect(page.locator('#band-count')).toHaveText('1');
@@ -27,7 +33,7 @@ test('start, real input, spam lock, upward burst, result, retry and BEST persist
   await page.clock.runFor(380);await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-impact.png`});
   await page.clock.runFor(2400);await expect(page.locator('#result')).toBeVisible();
   await expect(page.locator('#meter-visual')).toBeHidden();
-  await expect(page.locator('#retry-message')).toBeVisible();
+  await expect(page.locator('#action-label')).toHaveText('TRY ANOTHER');
   await expect(page.locator('#result-count')).toHaveText(String(bands));
   await expect(page.locator('#best-count')).toHaveText(String(bands));
   await page.screenshot({scale:'css',path:`artifacts/${testInfo.project.name}-result.png`});
@@ -41,9 +47,31 @@ test('start, real input, spam lock, upward burst, result, retry and BEST persist
   expect(await page.evaluate(()=>localStorage.getItem('rubber-band-best'))).toBe(String(bands));
   expect(errors).toEqual([]);
 });
+
+test('WebGL context loss pauses input and restores the same round',async({page,browserName})=>{
+  test.skip(browserName !== 'chromium','The WEBGL_lose_context simulation is checked in Chromium; normal WebKit rendering is covered above.');
+  await page.goto('./');
+  await expect(page.locator('#game')).toHaveAttribute('data-render','ready',{timeout:20000});
+  await page.keyboard.press('Space');await page.keyboard.press('Space');
+  await expect(page.locator('#band-count')).toHaveText('1');
+  const contextControl=await page.evaluateHandle(()=>{
+    const gl=(document.querySelector('#scene') as HTMLCanvasElement).getContext('webgl2')!;
+    return gl.getExtension('WEBGL_lose_context')!;
+  });
+  await contextControl.evaluate(extension=>extension.loseContext());
+  await expect(page.locator('#game')).toHaveAttribute('data-render','unavailable');
+  await expect(page.locator('#render-error')).toBeVisible();await expect(page.locator('#action')).toBeDisabled();
+  await page.keyboard.press('Space');await expect(page.locator('#band-count')).toHaveText('1');
+  await contextControl.evaluate(extension=>extension.restoreContext());
+  await contextControl.dispose();
+  await expect(page.locator('#game')).toHaveAttribute('data-render','ready',{timeout:20000});
+  await expect(page.locator('#render-error')).toBeHidden();await expect(page.locator('#game')).toHaveAttribute('data-phase','playing');
+  await page.waitForTimeout(350);await page.keyboard.press('Space');await expect(page.locator('#band-count')).toHaveText('2');
+});
 test('320px and landscape fit; touch adds exactly one; mute is not a game input; reduced motion',async({page},testInfo)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.emulateMedia({reducedMotion:'reduce'});await page.goto('./');
+  await expect(page.locator('#game')).toHaveAttribute('data-render','ready',{timeout:20000});
   for(const size of [{width:320,height:568},{width:390,height:844},{width:844,height:390}]){
     await page.setViewportSize(size);
     await expect(page.locator('#action')).toBeInViewport();
@@ -55,15 +83,15 @@ test('320px and landscape fit; touch adds exactly one; mute is not a game input;
   await page.locator('#sound').click();await expect(page.locator('#game')).toHaveAttribute('data-phase','ready');
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed','false');
   if(testInfo.project.use.hasTouch){
-    await page.locator('#action').tap();await page.locator('#scene').tap();
-  }else {await page.locator('#action').click();await page.locator('#scene').click();}
+    await page.locator('#action').tap();await page.touchscreen.tap(150,200);
+  }else {await page.locator('#action').click();await page.mouse.click(150,200);}
   await expect(page.locator('#band-count')).toHaveText('1');
   await page.locator('#sound').click();await expect(page.locator('#band-count')).toHaveText('1');
   expect(errors).toEqual([]);
 });
 test('blocked storage and held Space leave the game playable',async({page})=>{
   await page.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
-  await page.goto('./');await page.keyboard.press('Space');
+  await page.goto('./');await expect(page.locator('#game')).toHaveAttribute('data-render','ready',{timeout:20000});await page.keyboard.press('Space');
   await page.keyboard.down('Space');await page.waitForTimeout(900);await page.keyboard.down('Space');await page.keyboard.up('Space');
   await expect(page.locator('#band-count')).toHaveText('1');
   await expect(page.locator('body')).not.toContainText(/NaN|Infinity/);

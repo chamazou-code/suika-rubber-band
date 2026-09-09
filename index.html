@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#f5f3e7" />
-    <meta name="description" content="メーターを狙って、輪ゴムを1本。あと何本いける？ ワンタップで遊べる、スイカの限界チャレンジ。" />
+    <meta name="theme-color" content="#777565" />
+    <meta name="description" content="リアルな3Dスイカに、輪ゴムを1本。SAFEを狙って限界まで攻める、無料のワンタップゲーム。" />
     <meta property="og:title" content="RUBBER BAND 🍉 — あと1本、いける？" />
-    <meta property="og:description" content="SAFEを狙ってタップ。スイカがはじける、その1本まで。無料のワンタップゲーム。" />
+    <meta property="og:description" content="静かなテーブル、スイカ、輪ゴム。タイミングひとつで、あと1本。" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:image" content="https://chamazou-code.github.io/rubber-band/social.png" />
@@ -15,27 +15,46 @@
     <title>RUBBER BAND 🍉 — あと1本、いける？</title>
   </head>
   <body>
-    <main id="game" class="game" data-phase="ready">
-      <header class="header">
-        <div class="brand"><img src="/favicon.svg" width="30" height="30" alt="" /><h1>RUBBER BAND</h1></div>
-        <button id="sound" class="sound" type="button" aria-label="サウンドをオフにする" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M17 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/><path class="sound-slash" d="m17 9 5 6m0-6-5 6"/></svg></button>
-      </header>
-      <section class="stage" aria-label="スイカと、その後ろで見守る人物">
-        <div class="stage-intro"><p class="stage-eyebrow" id="phase-label">ONE TAP. ONE BAND.</p><h2 class="stage-copy" id="stage-copy">あと1本、いける？</h2></div>
+    <main id="game" class="game" data-phase="ready" data-render="loading">
+      <section class="stage" aria-label="木のテーブルの上の3Dスイカ">
         <canvas id="scene" aria-hidden="true"></canvas>
-        <div class="score" id="score"><span id="band-count">0</span><span class="score-label">BANDS</span></div>
-        <div id="feedback" class="feedback" aria-hidden="true"><span class="feedback-symbol" id="feedback-symbol">✦</span><span id="feedback-text"></span></div>
-        <div id="result" class="result" hidden>
-          <p class="result-eyebrow" id="result-title">NICE SQUEEZE!</p>
-          <div class="result-body"><div class="result-score"><span id="result-count">0</span><span>BANDS</span></div>
-          <div class="result-stats"><span>PERFECT <b id="perfect-rate">0%</b></span><span>BEST <b id="best-count">0</b></span></div></div>
-        </div>
       </section>
+      <header class="header">
+        <h1>RUBBER <span>BAND</span><img src="/favicon.svg" width="32" height="32" alt="🍉" /></h1>
+        <button id="sound" class="sound" type="button" aria-label="サウンドをオフにする" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="sound-waves" d="M17 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14"/><path class="sound-slash" d="m17 9 5 6m0-6-5 6"/></svg>
+        </button>
+      </header>
+      <div class="stage-intro"><p id="phase-label">ONE TAP. ONE BAND.</p><h2 id="stage-copy">あと1本、いける？</h2></div>
+      <div class="hud">
+        <div class="best"><span>BEST</span><strong id="hud-best">0</strong></div>
+        <div class="score" id="score"><span id="band-count">0</span><span class="score-label">BANDS</span></div>
+      </div>
+      <div class="loading" role="status">SETTING THE TABLE<span>スイカを準備しています…</span></div>
+      <div id="render-error" class="render-error" role="alert" hidden>
+        <strong>3D表示を開始できませんでした</strong><p>ブラウザを更新して、もう一度お試しください。</p>
+        <button id="reload" type="button">再読み込み</button>
+      </div>
       <section class="controls" aria-label="タイミング操作">
-        <div class="meter-panel"><div class="meter-visual" id="meter-visual"><div class="meter-heading"><span id="meter-title">SAFEを狙ってタップ</span><span class="meter-cue" aria-hidden="true">中央は PERFECT</span></div>
-        <canvas id="meter" aria-label="針がSAFEの中央に来たらタップ。中央はPERFECT、端はGOOD、外はMISS。"></canvas></div><div class="retry-message" id="retry-message" aria-hidden="true"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 18h56a28 28 0 0 1-56 0" fill="#8ab467"/><path d="M8 18h48a24 24 0 0 1-48 0" fill="#e9ebba"/><path d="M12 18h40a20 20 0 0 1-40 0" fill="#ef8a5b"/><path d="m22 25 1 5m10-4v5m10-6-1 5" stroke="#38533b" stroke-width="3" stroke-linecap="round"/></svg><span>もう1本、いける気がする。</span></div></div>
-        <button id="action" class="action" type="button"><span id="action-label">TAP TO START</span><span id="action-icon" aria-hidden="true">↗</span></button>
-        <p class="hint" id="hint"><span class="input-hint">TAP / CLICK / <kbd>SPACE</kbd></span><span class="sound-hint" id="sound-hint">音ありがおすすめ</span></p>
+        <div id="feedback" class="feedback" aria-hidden="true"><span id="feedback-symbol">✦</span><span id="feedback-text"></span></div>
+        <div class="meter-panel">
+          <div class="meter-visual" id="meter-visual">
+            <canvas id="meter" aria-label="針がSAFEの中央に来たらタップ。中央はPERFECT、端はGOOD、外はMISS。"></canvas>
+            <div id="meter-title">SAFEを狙ってタップ</div>
+          </div>
+          <div id="result" class="result" hidden>
+            <p id="result-title">NICE SQUEEZE!</p>
+            <div class="result-body">
+              <div class="result-score"><span id="result-count">0</span><span>BANDS</span></div>
+              <div class="result-stats"><span>PERFECT <b id="perfect-rate">0%</b></span><span>BEST <b id="best-count">0</b></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="action-group">
+          <p id="retry-message" class="retry-message" aria-hidden="true">次のスイカ、いってみよう。</p>
+          <button id="action" class="action" type="button" disabled><span id="action-label">TAP TO START</span><span id="action-icon" aria-hidden="true">↗</span></button>
+          <p class="hint"><span>TAP / CLICK / <kbd>SPACE</kbd></span><span id="sound-hint">SOUND ON</span></p>
+        </div>
       </section>
       <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
       <noscript>このゲームを遊ぶには、ブラウザのJavaScriptを有効にしてください。</noscript>
