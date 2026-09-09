@@ -3,7 +3,9 @@ async function press(page:Page){await page.keyboard.press('Space');}
 test('start, real input, spam lock, upward burst, result, retry and BEST persistence',async({page},testInfo)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{Math.random=()=>.5;});
-  await page.clock.install();await page.goto('/');await page.clock.runFor(100);
+  await page.clock.install({time:new Date('2026-09-09T00:00:00Z')});
+  await page.clock.pauseAt(new Date('2026-09-09T00:00:01Z'));
+  await page.goto('./');await page.clock.runFor(100);
   await expect(page.locator('#game')).toHaveAttribute('data-phase','ready');
   await page.screenshot({path:`artifacts/${testInfo.project.name}-ready.png`});
   const initial=await page.locator('#action').boundingBox();expect(initial!.width).toBeGreaterThan(240);
@@ -35,7 +37,7 @@ test('start, real input, spam lock, upward burst, result, retry and BEST persist
 });
 test('320px and landscape fit; touch adds exactly one; mute is not a game input; reduced motion',async({page},testInfo)=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/');
+  await page.emulateMedia({reducedMotion:'reduce'});await page.goto('./');
   for(const size of [{width:320,height:568},{width:390,height:844},{width:844,height:390}]){
     await page.setViewportSize(size);
     await expect(page.locator('#action')).toBeInViewport();
@@ -55,7 +57,7 @@ test('320px and landscape fit; touch adds exactly one; mute is not a game input;
 });
 test('blocked storage and held Space leave the game playable',async({page})=>{
   await page.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));
-  await page.goto('/');await page.keyboard.press('Space');
+  await page.goto('./');await page.keyboard.press('Space');
   await page.keyboard.down('Space');await page.waitForTimeout(900);await page.keyboard.down('Space');await page.keyboard.up('Space');
   await expect(page.locator('#band-count')).toHaveText('1');
   await expect(page.locator('body')).not.toContainText(/NaN|Infinity/);

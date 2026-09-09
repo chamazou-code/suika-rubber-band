@@ -2,6 +2,12 @@
 
 メーターを狙って、輪ゴムを1本。スイカの限界まで巻く、ワンタップのブラウザゲーム。v1.0.0。
 
+**公開URL：[ブラウザで遊ぶ](https://chamazou-code.github.io/rubber-band/)**
+
+[GitHubリポジトリ](https://github.com/chamazou-code/rubber-band)
+
+現在はGitHub Pagesに公開。Cloudflareはアカウントのログイン待ちで、下記設定でGit連携できます。GitHub Pagesでも `main` へのpushでテスト・ビルド・公開が自動実行されます。
+
 ## 遊び方
 
 **タップ・クリック・Space** のどれかで開始。その後も同じ操作で輪ゴムを追加します。
@@ -33,6 +39,9 @@ npm run preview
 ```sh
 npx playwright install chromium webkit
 npm run test:e2e
+
+# 公開URLに同じE2Eを実行
+GAME_URL=https://chamazou-code.github.io/rubber-band/ npm run test:e2e
 ```
 
 Chromeのプロジェクトはインストール済みGoogle Chromeを使用します。CIではChromiumへ切り替えます。

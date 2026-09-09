@@ -3,8 +3,8 @@ export default defineConfig({
   testDir: './tests/e2e', fullyParallel: false, workers: 2,
   timeout: 60_000, expect: { timeout: 5_000 },
   reporter: [['list'],['html',{open:'never'}]],
-  use: { baseURL:'http://127.0.0.1:5173', trace:'retain-on-failure', screenshot:'only-on-failure' },
-  webServer:{command:'npm run dev',url:'http://127.0.0.1:5173',reuseExistingServer:!process.env.CI},
+  use: { baseURL:process.env.GAME_URL || 'http://127.0.0.1:5173', trace:'retain-on-failure', screenshot:'only-on-failure' },
+  webServer:process.env.GAME_URL ? undefined : {command:'npm run dev',url:'http://127.0.0.1:5173',reuseExistingServer:!process.env.CI},
   projects:[
     {name:'Desktop Chrome',use:{...devices['Desktop Chrome'],channel:process.env.CI ? undefined : 'chrome',viewport:{width:1440,height:900}}},
     {name:'Desktop WebKit',use:{...devices['Desktop Safari'],viewport:{width:1440,height:900}}},

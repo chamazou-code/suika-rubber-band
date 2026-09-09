@@ -24,6 +24,10 @@
 
 メーターの描画ピクセルを読むQAプレイヤーで、実時間の3ラウンドを実行。内部耐久を参照せず、実際のUI操作だけを使用。初期設定では44本/100%/50.75秒、41本/66%/49.17秒、62本/100%/64.85秒。待ち時間を縮めるため、針の速度を `0.64 + bands * 0.014` に調整。
 
+調整後のProduction buildでも3ラウンドを完了：60本/100%/65.73秒、45本/67%/55.28秒、66本/100%/60.12秒。時間は破裂演出と結果表示を含む。高耐久個体・全PERFECT・環境負荷によって目安の60秒を超える場合がある。
+
+時計を固定した同じ12件のE2Eを、公開URLでも実行して全件合格。連打テストはテスト環境の実行速度に依存しないよう修正済み。
+
 ## 検証の限界
 
 - Android Chromeの物理端末は未接続。AndroidについてはChromeのタッチ・端末設定による検証。
@@ -34,4 +38,8 @@
 
 ## 公開
 
-GitHub・Cloudflare Pagesの公開結果は最終検証後に追記する。CloudflareのCLIとブラウザは開始時点で未ログイン。
+- GitHub： https://github.com/chamazou-code/rubber-band
+- 公開URL： https://chamazou-code.github.io/rubber-band/
+- GitHub Pagesへの自動デプロイ成功、HTTPSでHTTP 200、公開先でE2E 12件成功。
+- Cloudflare Pagesは未作成・未接続。CLIとブラウザが未ログインのため、ユーザーのアカウント操作が残る。READMEにGit連携の設定を記載。
+- GitHub Pagesのデプロイは単体・E2E・ビルドを通してから実行。Cloudflareに接続した後もこの公開URLは利用可能。
