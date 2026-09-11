@@ -125,7 +125,7 @@ function loop(now: number) {
   if (destroyed || document.hidden || !renderer?.available) { frame = 0; return; }
   const dt = lastTime ? Math.min((now - lastTime) / 1000, .05) : 0; lastTime = now;
   const effect = game.tick(dt);
-  if (effect === 'burst') { renderer.burst(); sound.burst(); updatePhase(); }
+  if (effect === 'burst') { renderer.burst(game.bands); sound.burst(); updatePhase(); }
   if (effect === 'hit') sound.spray();
   if (effect === 'result') {
     best = Math.max(best, game.bands); saveBest(best, storage);

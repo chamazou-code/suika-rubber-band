@@ -17,7 +17,7 @@ try {
       const { Renderer } = await import('/src/render.ts'); const { Game } = await import('/src/game.ts');
       const renderer = new Renderer(document.querySelector('#scene'), document.querySelector('#meter'));
       await renderer.prepare(); const game = new Game(() => .8); game.start(); game.bands = 50; game.snapTime = 1;
-      renderer.render(game, 1, false); renderer.burst(); game.phase = 'bursting';
+      renderer.render(game, 1, false); renderer.burst(game.bands, 953); game.phase = 'bursting';
       window.juiceQA = { renderer, game };
     });
     for (const time of [.12, .4, .9, 1.35, 2.2, 3.8]) {
@@ -32,11 +32,12 @@ try {
       reports.push({ viewport, time, ...info });
     }
     // Same absolute visual times with and without skipped frames, plus repeated rounds.
-    const cpu = await page.evaluate(() => {
+    const cpu = await page.evaluate(async () => {
+      const { createBurstProfile } = await import('/src/visual/burst-profile.ts');
       const { renderer } = window.juiceQA; const timings = [];
       const particles = renderer.particles;
       const spray = particles.root.getObjectByName('JuiceParticles'), stains = particles.root.getObjectByName('JuiceOnTable');
-      particles.reset(); particles.trigger(1.23); particles.update(.1, false);
+      particles.reset(); particles.trigger(1.23, createBurstProfile(70, 953)); particles.update(.1, false);
       const dryBeforeLanding = Array.from({ length: stains.count }, (_, i) => stains.instanceMatrix.array[i * 16]).every(scale => scale === 0);
       particles.update(1.35, false);
       const finiteMatrices = [...spray.instanceMatrix.array, ...stains.instanceMatrix.array].every(Number.isFinite);
@@ -47,7 +48,7 @@ try {
       const airborneAfterSettling = Array.from({ length: spray.count }, (_, i) => Math.hypot(...spray.instanceMatrix.array.slice(i * 16, i * 16 + 3))).some(scale => scale > 0);
       particles.reset(); const clearedCount = spray.count + stains.count;
       for (let round = 0; round < 15; round++) {
-        renderer.particles.reset(); renderer.particles.trigger(1.23);
+        renderer.particles.reset(); renderer.particles.trigger(1.23, createBurstProfile(70, 953 + round));
         for (let frame = 0; frame <= 240; frame++) {
           const start = performance.now(); renderer.particles.update(frame / 60, false);
           if (round > 1) timings.push(performance.now() - start);

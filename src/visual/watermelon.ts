@@ -8,7 +8,8 @@ import { MelonSurface, melonHeight, melonRadius, releasedLowerBands } from './sh
 import { makeFleshTexture, makeRindTextures, seededRandom } from './textures';
 import { makeTornSurface, tornFleshHeight } from './fracture';
 import { TableBody } from './physics';
-import { upperFlightPosition, UPPER_GRAVITY, UPPER_SEAMS, UPPER_SEGMENTS, UPPER_SPEED, UPPER_SPLIT_TIME } from './upper-motion';
+import { containFragment, createBurstProfile, type BurstProfile } from './burst-profile';
+import { upperFlightPosition, UPPER_GRAVITY, UPPER_SEAMS, UPPER_SEGMENTS, UPPER_SPEED } from './upper-motion';
 
 export class Watermelon {
   readonly root = new Group();
@@ -32,7 +33,7 @@ export class Watermelon {
   private sectionBodies: { body: TableBody; center: Vector3 }[] = [];
   private releasedBands: { body: TableBody; radius: number }[] = [];
   private transformedCenter = new Vector3();
-  private round = 0;
+  private burstProfile = createBurstProfile(0, 0);
   private count = -1;
   private random = seededRandom(419);
   private ringDetails = Array.from({ length: 70 }, () => ({ tilt: (this.random() - .5) * .026, phase: this.random() * Math.PI * 2, offset: (this.random() - .5) * .004 }));
@@ -165,34 +166,37 @@ export class Watermelon {
     this.dummy.updateMatrix(); this.bands.setMatrixAt(i, this.dummy.matrix);
   }
 
+  setBurstProfile(profile: BurstProfile) { this.burstProfile = profile; }
+
   private release() {
     this.fractured = true;
     this.relaxedBands = -1;
     this.lowerSurface.deform(this.count, true);
     for (const surface of this.upperSurfaces) surface.deform(this.count, true);
-    const random = seededRandom(++this.round * 113 + 599), height = melonHeight(this.count);
-    const split = UPPER_SPLIT_TIME;
-    const rotation = new Quaternion().setFromEuler(new Euler(split * .25, split * .12, -split * .25));
+    const profile = this.burstProfile, random = seededRandom(profile.seed ^ 599), height = melonHeight(this.count);
+    const split = profile.splitTime;
+    const rotation = new Quaternion().setFromEuler(new Euler(split * profile.tiltX, split * profile.tiltY, split * profile.tiltZ));
     this.sectionBodies = this.upperSurfaces.map((surface, i) => {
       const p = surface.geometry.attributes.position, support: Vector3[] = [];
       for (let row = 0; row <= 28; row += 4) for (let col = 0; col <= UPPER_SEGMENTS; col += 3) support.push(new Vector3().fromBufferAttribute(p, row * (UPPER_SEGMENTS + 1) + col));
       support.push(new Vector3());
       const center = support.reduce((sum, point) => sum.add(point), new Vector3()).divideScalar(support.length);
       for (const point of support) point.sub(center);
-      const phi = (UPPER_SEAMS[i] + UPPER_SEAMS[i + 1]) * .5, spread = 2.3 + random() * .65;
-      const position = center.clone().applyQuaternion(rotation).add(upperFlightPosition(split, height, new Vector3()));
+      const phi = (UPPER_SEAMS[i] + UPPER_SEAMS[i + 1]) * .5, spread = (2.05 + random() * .9) * profile.spread;
+      const position = center.clone().applyQuaternion(rotation).add(upperFlightPosition(split, height, profile, new Vector3()));
       const body = new TableBody({ position, rotation, support,
-        velocity: new Vector3(.65 - Math.cos(phi) * spread, UPPER_SPEED - UPPER_GRAVITY * split + (random() - .5) * .9, -.25 + Math.sin(phi) * spread),
-        angularVelocity: new Vector3(1.1 + random() * 2.1, (random() - .5) * 3.4, (i % 2 ? -1 : 1) * (1.4 + random() * 1.6)),
+        velocity: containFragment(position, new Vector3(profile.driftX - Math.cos(phi) * spread, UPPER_SPEED * profile.lift - UPPER_GRAVITY * split + (random() - .5) * .9, profile.driftZ + Math.sin(phi) * spread), 2.6 + (profile.power - .72) * 1.4),
+        angularVelocity: new Vector3(1.1 + random() * 2.1, (random() - .5) * 3.4, (i % 2 ? -1 : 1) * (1.4 + random() * 1.6)).multiplyScalar(profile.spin),
         restitution: .15, friction: 10, airDrag: .15 });
       return { body, center };
     });
     this.releasedBands = Array.from({ length: this.count }, (_, i) => {
       const radius = .15 + random() * .10, angle = random() * Math.PI * 2;
-      const speed = 1.8 + random() * 2.5, support = Array.from({ length: 12 }, (_, k) => new Vector3(Math.cos(k / 12 * Math.PI * 2) * radius, Math.sin(k / 12 * Math.PI * 2) * radius, 0));
-      const body = new TableBody({ position: new Vector3(0, height + (i / Math.max(1, this.count - 1) - .5) * .35, 0),
+      const speed = (1.8 + random() * 2.5) * Math.sqrt(profile.power), support = Array.from({ length: 12 }, (_, k) => new Vector3(Math.cos(k / 12 * Math.PI * 2) * radius, Math.sin(k / 12 * Math.PI * 2) * radius, 0));
+      const origin = new Vector3(0, height + (i / Math.max(1, this.count - 1) - .5) * .35, 0);
+      const body = new TableBody({ position: origin,
         rotation: new Quaternion().setFromEuler(new Euler(Math.PI / 2, 0, angle)), support,
-        velocity: new Vector3(Math.cos(angle) * speed, 1.1 + random() * 3.1, Math.sin(angle) * speed),
+        velocity: containFragment(origin, new Vector3(Math.cos(angle) * speed, (1.1 + random() * 3.1) * profile.lift, Math.sin(angle) * speed), profile.wetRadius),
         angularVelocity: new Vector3((random() - .5) * 14, (random() - .5) * 12, (random() - .5) * 14),
         restitution: .58, friction: 5.5, airDrag: .65 });
       return { body, radius };
@@ -236,7 +240,7 @@ export class Watermelon {
     }
     this.bands.visible = !broken; this.flyingBands.visible = broken;
     for (const cut of [this.lowerCut, ...this.upperCuts]) cut.visible = broken;
-    for (const face of this.fractureFaces) face.mesh.visible = broken && visualTime > UPPER_SPLIT_TIME;
+    for (const face of this.fractureFaces) face.mesh.visible = broken && visualTime > this.burstProfile.splitTime;
     this.cracks.visible = !broken && this.count > 30;
     this.upper.position.set(0, 0, 0); this.upper.rotation.set(0, 0, 0);
     for (const section of this.sections) { section.position.set(0, 0, 0); section.rotation.set(0, 0, 0); }
@@ -244,12 +248,12 @@ export class Watermelon {
     this.root.position.y = melonHeight(this.count);
     if (broken) {
       this.relaxLower(visualTime);
-      if (visualTime <= UPPER_SPLIT_TIME) {
+      if (visualTime <= this.burstProfile.splitTime) {
         const t = visualTime;
-        upperFlightPosition(t, 0, this.upper.position);
-        this.upper.rotation.set(t * .25, t * .12, -t * .25);
+        upperFlightPosition(t, 0, this.burstProfile, this.upper.position);
+        this.upper.rotation.set(t * this.burstProfile.tiltX, t * this.burstProfile.tiltY, t * this.burstProfile.tiltZ);
       } else {
-        const t = visualTime - UPPER_SPLIT_TIME;
+        const t = visualTime - this.burstProfile.splitTime;
         for (let i = 0; i < this.upperSurfaces.length; i++) {
           const section = this.sections[i], { body, center } = this.sectionBodies[i]; body.advance(t);
           this.transformedCenter.copy(center).applyQuaternion(body.rotation);

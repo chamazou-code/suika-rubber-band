@@ -20,7 +20,7 @@ const report=await page.evaluate(async()=>{
   for(let round=0;round<5;round++){
     game.start();renderer.reset();draw();
     for(let count=1;count<=70;count++){game.bands=count;game.snapTime=1;draw();}
-    late=sample();game.phase='bursting';game.phaseTime=.15;renderer.burst();draw();peak=sample();
+    late=sample();game.phase='bursting';game.phaseTime=.15;renderer.burst(game.bands, 953 + round);draw();peak=sample();
     flight={upperY:renderer.watermelon.upper.position.y,lowerY:renderer.watermelon.lower.position.y};
     game.phase='result';game.phaseTime=2.65;draw();for(let frame=0;frame<100;frame++)draw();rounds.push(sample());const matrix=renderer.watermelon.root.getObjectByName('ReleasedRubberBands').instanceMatrix.array;releasedBands={count:renderer.watermelon.root.getObjectByName('ReleasedRubberBands').count,firstDistance:Math.hypot(matrix[12],matrix[14]),lastDistance:Math.hypot(matrix[69*16+12],matrix[69*16+14])};
   }

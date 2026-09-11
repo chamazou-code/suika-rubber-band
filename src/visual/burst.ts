@@ -5,7 +5,8 @@ import {
 import { seededRandom } from './textures';
 import { TableBody } from './physics';
 import { JuiceSpray } from './juice';
-import { upperFlightPosition, UPPER_SPLIT_TIME } from './upper-motion';
+import { containFragment, type BurstProfile } from './burst-profile';
+import { upperFlightPosition } from './upper-motion';
 
 interface Fragment { body: TableBody; size: number; delay: number }
 interface Batch { mesh: InstancedMesh; fragments: Fragment[]; kind: 'flesh' | 'seed' | 'rind' }
@@ -15,7 +16,6 @@ export class Burst {
   private batches: Batch[];
   private juice = new JuiceSpray();
   private dummy = new Object3D();
-  private round = 0;
 
   constructor() {
     this.root.name = 'BurstEffects';
@@ -39,23 +39,24 @@ export class Burst {
     this.root.add(this.juice.root); this.root.visible = false;
   }
 
-  trigger(height: number) {
+  trigger(height: number, profile: BurstProfile) {
     this.root.visible = true;
-    const seed = ++this.round * 451 + 937, random = seededRandom(seed);
-    this.juice.trigger(height, seed + 701);
+    const random = seededRandom(profile.seed ^ 937);
+    this.juice.trigger(height, profile);
     for (const batch of this.batches) {
-      batch.fragments = Array.from({ length: batch.mesh.instanceMatrix.count }, (_, i) => {
-        const angle = random() * Math.PI * 2;
+      const count = batch.kind === 'flesh' ? profile.fleshCount : batch.kind === 'seed' ? profile.seedCount : profile.rindCount;
+      batch.fragments = Array.from({ length: count }, (_, i) => {
+        const angle = profile.angle + random() * Math.PI * 2;
         // The second wave follows the upper half into the air, then sheds pulp as it breaks up.
         const fromUpper = batch.kind !== 'seed' && i % 3 !== 0;
-        const delay = fromUpper ? UPPER_SPLIT_TIME + random() * .07 : random() * .065;
-        const lateral = .7 + random() * (fromUpper ? 2.45 : 1.8);
-        const vy = fromUpper ? 1.3 + random() * 2.6 : 4.2 + random() * 3;
+        const delay = fromUpper ? profile.splitTime + random() * profile.pulseGap : random() * .065;
+        const lateral = (.7 + random() * (fromUpper ? 2.45 : 1.8)) * profile.spread;
+        const vy = (fromUpper ? 1.3 + random() * 2.6 : 4.2 + random() * 3) * profile.lift;
         const size = batch.kind === 'seed' ? .023 + random() * .013 : batch.kind === 'flesh' ? .065 + Math.pow(random(), 1.5) * .13 : .055 + random() * .085;
-        const origin = fromUpper ? upperFlightPosition(delay, height, new Vector3()) : new Vector3(0, height, 0);
+        const origin = fromUpper ? upperFlightPosition(delay, height, profile, new Vector3()) : new Vector3(0, height, 0);
         origin.x += (random() - .5) * .9; origin.y += .08 + random() * .22; origin.z += (random() - .5) * .9;
-        const body = new TableBody({ position: origin, velocity: new Vector3(Math.cos(angle) * lateral, vy, Math.sin(angle) * lateral),
-          angularVelocity: new Vector3((random() - .5) * 17, (random() - .5) * 13, (random() - .5) * 15),
+        const body = new TableBody({ position: origin, velocity: containFragment(origin, new Vector3(Math.cos(angle) * lateral, vy, Math.sin(angle) * lateral), profile.wetRadius),
+          angularVelocity: new Vector3((random() - .5) * 17, (random() - .5) * 13, (random() - .5) * 15).multiplyScalar(profile.spin),
           support: [new Vector3(0, -size * .5, 0), new Vector3(size * .7, 0, 0), new Vector3(-size * .7, 0, 0), new Vector3(0, 0, size * .6), new Vector3(0, 0, -size * .6)],
           restitution: batch.kind === 'seed' ? .4 : .12,
           friction: batch.kind === 'seed' ? 6 : 14, airDrag: .2 });

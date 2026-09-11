@@ -19,7 +19,7 @@ for (const time of [.001, .24, .5, .84, 2.5]) {
   samples.push(await page.evaluate(time => {
     const { renderer, game } = window.qa;
     game.phase = 'bursting'; game.phaseTime = time;
-    if (time === .001) renderer.burst(); renderer.render(game, 1 + time, true);
+    if (time === .001) renderer.burst(game.bands, 953); renderer.render(game, 1 + time, true);
     const melon = renderer.watermelon, cut = melon.lower.getObjectByName('InteriorFlesh');
     return { time, opening: cut.scale.x, cutHeight: melon.root.position.y + cut.position.y, base: melon.root.position.y + melon.lowerSurface.geometry.boundingBox.min.y };
   }, time));

@@ -1,3 +1,5 @@
+import { createBurstProfile, nextBurstSeed } from './visual/burst-profile';
+import { melonHeight } from './visual/shape';
 import {
   ACESFilmicToneMapping, BoxGeometry, Color, DirectionalLight, Fog, Group, HemisphereLight,
   InstancedMesh, LatheGeometry, Material, Mesh, MeshBasicMaterial, MeshStandardMaterial,
@@ -145,8 +147,13 @@ export class Renderer {
     else this.camera.clearViewOffset();
     this.meter.resize(); this.dirty = true;
   }
+  private burstProfile = createBurstProfile(0, 0);
   reset() { this.particles.reset(); this.dirty = true; this.previousBands = -1; }
-  burst() { this.particles.trigger(this.watermelon.root.position.y); this.dirty = true; }
+  burst(bands: number, seed = nextBurstSeed()) {
+    this.burstProfile = createBurstProfile(bands, seed);
+    this.watermelon.setBurstProfile(this.burstProfile);
+    this.particles.trigger(melonHeight(bands), this.burstProfile); this.dirty = true;
+  }
 
   render(game: Game, time: number, reduced: boolean) {
     if (!this.available || this.disposed) return;
@@ -174,7 +181,7 @@ export class Renderer {
     if (game.phase === 'result') visual = Math.min(4, game.phaseTime - HIT_STOP + time - this.resultStarted);
     this.camera.position.copy(this.cameraHome);
     if (!reduced && game.phase === 'bursting' && visual < .56) {
-      const shake = .045 * (1 - visual / .56);
+      const shake = .04 * this.burstProfile.power * (1 - visual / .56);
       this.camera.position.x += Math.sin(visual * 133) * shake; this.camera.position.y += Math.cos(visual * 157) * shake * .6;
     }
     this.camera.lookAt(this.lookAt);
