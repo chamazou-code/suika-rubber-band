@@ -84,7 +84,7 @@ export class Renderer {
   }
 
   async prepare() {
-    // Precompile the fruit interior and all four particle materials before the first tap.
+    // Precompile the fruit interior and all spray and fragment materials before the first tap.
     const hidden: Object3D[] = [];
     this.scene.traverse(object => { if (!object.visible) { hidden.push(object); object.visible = true; } });
     const viewport = this.webgl.getViewport(new Vector4());

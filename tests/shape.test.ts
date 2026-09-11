@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MelonSurface, melonHeight, melonRadius, releasedLowerBands } from '../src/visual/shape';
+import { UPPER_SEAMS, UPPER_SEGMENTS } from '../src/visual/upper-motion';
 
 test('released lower half opens and settles without lifting its base or retaining the constricted neck', () => {
   const lower = new MelonSurface(false), originalBands = 55, rootHeight = melonHeight(originalBands);
@@ -47,14 +48,22 @@ test('upper and lower surfaces share waist geometry, UVs and normals across defo
   upper.geometry.dispose(); lower.geometry.dispose();
 });
 
-test('upper fracture sections form a continuous rind before the upward launch', () => {
-  const a = new MelonSurface(true, 0, Math.PI * 2 / 3, 24), b = new MelonSurface(true, Math.PI * 2 / 3, Math.PI * 2 / 3, 24);
+test('all unequal upper fracture sections form a continuous rind before the upward launch', () => {
+  const sections = UPPER_SEAMS.slice(0, -1).map((start, i) => new MelonSurface(true, start, UPPER_SEAMS[i + 1] - start, UPPER_SEGMENTS));
+  const stride = UPPER_SEGMENTS + 1;
   for (const bands of [0, 35, 60]) {
-    a.deform(bands); b.deform(bands);
-    for (let row = 1; row <= 28; row++) for (const attr of ['position', 'normal', 'uv']) {
-      const av = a.geometry.attributes[attr], bv = b.geometry.attributes[attr];
-      for (let k = 0; k < av.itemSize; k++) assert.ok(Math.abs(av.array[(row * 25 + 24) * av.itemSize + k] - bv.array[row * 25 * bv.itemSize + k]) < 1e-5);
+    for (const section of sections) section.deform(bands);
+    for (let index = 0; index < sections.length; index++) {
+      const a = sections[index], b = sections[(index + 1) % sections.length];
+      for (let row = 1; row <= 28; row++) for (const attr of ['position', 'normal', 'uv']) {
+        const av = a.geometry.attributes[attr], bv = b.geometry.attributes[attr];
+        for (let k = 0; k < av.itemSize; k++) {
+          const delta = av.array[(row * stride + UPPER_SEGMENTS) * av.itemSize + k] - bv.array[row * stride * bv.itemSize + k];
+          // The texture wraps from 1 back to 0 only at the final seam.
+          assert.ok(Math.abs(delta - (attr === 'uv' && k === 0 && index === sections.length - 1 ? 1 : 0)) < 1e-5);
+        }
+      }
     }
   }
-  a.geometry.dispose(); b.geometry.dispose();
+  for (const section of sections) section.geometry.dispose();
 });

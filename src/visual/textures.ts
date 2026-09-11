@@ -117,10 +117,29 @@ export function makeSoftTexture(kind: 'shadow' | 'juice' | 'window') {
   if (kind === 'window') {
     c.fillStyle = '#ffffff';
     for (let x = 0; x < 3; x++) for (let y = 0; y < 4; y++) c.fillRect(12 + x * 80, 10 + y * 60, 68, 49);
+  } else if (kind === 'juice') {
+    const random = seededRandom(733);
+    const gradient = c.createRadialGradient(110, 104, 3, 128, 128, 118);
+    gradient.addColorStop(0, '#ff927bcc'); gradient.addColorStop(.66, '#f77859bc'); gradient.addColorStop(1, '#ee704b60');
+    c.fillStyle = gradient; c.beginPath();
+    for (let i = 0; i <= 96; i++) {
+      const a = i / 96 * Math.PI * 2;
+      const radius = 70 + Math.sin(a * 5 + .8) * 11 + Math.sin(a * 9) * 6 + Math.pow(Math.max(0, Math.sin(a * 13)), 8) * 21;
+      const x = 128 + Math.cos(a) * radius, y = 128 + Math.sin(a) * radius;
+      if (!i) c.moveTo(x, y); else c.lineTo(x, y);
+    }
+    c.closePath(); c.fill();
+    // Small separated droplets around an uneven wet footprint, not a soft circular blob.
+    c.fillStyle = '#fc8a6ac0';
+    for (let i = 0; i < 19; i++) {
+      const a = random() * Math.PI * 2, r = 91 + random() * 29;
+      c.beginPath(); c.ellipse(128 + Math.cos(a) * r, 128 + Math.sin(a) * r, 1.5 + random() * 4, 1 + random() * 2.5, a, 0, Math.PI * 2); c.fill();
+    }
+    c.strokeStyle = '#ffd7b957'; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(117, 113, 40, 32, -.4, 3.35, 4.5); c.stroke();
   } else {
     const gradient = c.createRadialGradient(128, 128, 0, 128, 128, 124);
-    gradient.addColorStop(0, kind === 'shadow' ? '#00000090' : '#fa604bad');
-    gradient.addColorStop(kind === 'shadow' ? .35 : .76, kind === 'shadow' ? '#00000050' : '#ed634390');
+    gradient.addColorStop(0, '#00000090'); gradient.addColorStop(.35, '#00000050');
     gradient.addColorStop(1, '#00000000'); c.fillStyle = gradient; c.fillRect(0, 0, 256, 256);
   }
   return texture(element, true);
